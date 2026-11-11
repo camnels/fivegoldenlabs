@@ -1,0 +1,265 @@
+---
+title: "Lab 5: Correlation, National Climate Policy, and Country Characteristics"
+author: "Your Name"
+date: today
+format:
+  gfm:
+    toc: true
+    number-sections: true
+editor_options: 
+  chunk_output_type: console
+---
+
+## Introduction
+
+How are national climate policies related to countries' political institutions, economic development, and carbon emissions? Do these relationships look different in 2000 and 2020?
+
+In this lab, you will use data from the OECD, the World Development Indicators (WDI), and the Varieties of Democracy (V-Dem) project to investigate these questions. You will use descriptive statistics, visualizations, correlation coefficients, and statistical tests to explore patterns across 34 countries.
+
+Correlation can help identify relationships between variables, but it cannot establish that one variable causes another. For example, an association between democracy and climate-policy stringency does not demonstrate that democratic institutions cause stronger climate policies.
+
+### Learning objectives
+This lab assesses the following learning standards:
+
+10. Derive new variables from existing ones through calculated transformations, including unit conversions, differences across time periods, and categorical dummy variables. 
+21. Assess the normality of a variable and use those results to select between parametric and non-parametric statistical tests. 
+25. Conduct correlation analysis across multiple variable pairs and evaluate results with respect to direction, magnitude, and significance, including changes in correlation structure across time periods or subgroups.
+
+## 1. Load packages and inspect the data
+
+We will use `tidyverse` for data manipulation and visualization, `Hmisc` to calculate correlation matrices, and `corrplot` to visualize those matrices.
+
+```{r setup}
+library(tidyverse)
+library(Hmisc)
+library(corrplot)
+library(knitr)
+
+all_vars<-read_csv("data/climpolicy_combined.csv")
+```
+
+The combined dataset, `all_vars`, contains observations for 34 countries in 2000 and 2020. Each row represents a country in a particular year.
+
+### Variables in the dataset
+
+| Variable | Description |
+|:--|:--|
+| `country_name` | Country name |
+| `country_text_id` | Country identifier |
+| `year` | Observation year |
+| `oecd_climpol_stringent` | OECD-derived climate-policy stringency measure |
+| `co2_emissions` | Total CO₂ emissions measure |
+| `gdp` | Gross domestic product (constant 2015 US dollars) |
+| `tot_population` | Total population |
+| `v2x_polyarchy` | V-Dem electoral democracy index |
+
+We will also calculate GDP per capita and CO₂ emissions per capita. 
+
+```{r}
+all_vars <- all_vars %>%
+  mutate(
+    gdp_per_capita = gdp / tot_population,
+    co2_per_capita = co2_emissions * 1e6 / tot_population
+  )
+```
+
+This calculation assumes `co2_emissions` is in million tonnes and population is measured in persons. The resulting `co2_per_capita` measure is tonnes per person. GDP per capita is in 2015 US dollars, divided by population.
+
+Inspect the new variables.
+
+```{r}
+all_vars %>%
+  select(
+    country_name, year, oecd_climpol_stringent,
+    co2_per_capita, gdp_per_capita, v2x_polyarchy
+  ) %>%
+  slice_head(n = 10) %>%
+  kable(digits = 2)
+```
+
+**Task 1** _Why might GDP per capita and CO₂ emissions per capita be more useful than total GDP and total emissions when comparing countries?_
+
+{Your response here.}
+
+## 2. Explore the distributions of the variables
+
+Before calculating correlations, examine the distributions of the variables. Correlation coefficients summarize relationships between variables, and their interpretation can be affected by skewed distributions and unusual observations.
+
+We will focus on four measures:
+
+- Climate-policy stringency
+- CO₂ emissions per capita
+- GDP per capita
+- Electoral democracy
+
+Create a subset for 2020.
+
+```{r}
+data_2020 <- all_vars %>%
+  filter(year == 2020)
+```
+
+We can then create histograms to examine the distributions for each of the four variables of interest.
+
+```{r}
+data_2020 %>%
+  select(
+    oecd_climpol_stringent,
+    co2_per_capita,
+    gdp_per_capita,
+    v2x_polyarchy
+  ) %>%
+  pivot_longer(
+    everything(),
+    names_to = "variable",
+    values_to = "value"
+  ) %>%
+  ggplot(aes(x = value)) +
+  geom_histogram(bins = 12, color = "white") +
+  facet_wrap(~ variable, scales = "free") +
+  theme_minimal() +
+  labs(
+    title = "Distributions of National Characteristics, 2020",
+    x = NULL,
+    y = "Number of countries"
+  )
+```
+
+The facets use different horizontal scales because the variables have different units.
+
+You can also examine normal Q-Q plots.
+
+```{r}
+data_2020 %>%
+  select(
+    oecd_climpol_stringent,
+    co2_per_capita,
+    gdp_per_capita,
+    v2x_polyarchy
+  ) %>%
+  pivot_longer(
+    everything(),
+    names_to = "variable",
+    values_to = "value"
+  ) %>%
+  ggplot(aes(sample = value)) +
+  stat_qq() +
+  stat_qq_line() +
+  facet_wrap(~ variable, scales = "free") +
+  theme_minimal() +
+  labs(
+    title = "Normal Q-Q Plots, 2020",
+    x = "Theoretical quantiles",
+    y = "Sample quantiles"
+  )
+```
+
+**Task 2** _Which variables appear most skewed? Pick one of these and identify some of the countries that are outliers for this variable._
+
+{Your response goes here.}
+
+## 3. Calculate correlations for 2020
+
+Correlation coefficients measure the direction and strength of relationships between two numerical variables. Pearson's correlation coefficient is typically used when variables are approximately normally distributed and exhibit a linear relationship, whereas Spearman's rank correlation coefficient is appropriate for non-normal or ordinal data.
+
+**Task 3** _Select just the four variables of interest and create a correlation matrix using the appropriate measure of correlation. Print this table once you've created it._
+
+```{r Task3}
+
+```
+
+**Task 4** _Create a correlation plot from this matrix using `corrplot` and the parameters of your choosing_
+
+```{r Task4}
+
+```
+
+**Task 5** Based on your correlation matrix and correlation plot, is climate-policy stringency associated with electoral democracy, GDP per capita, or CO₂ emissions per capita? Describe the direction and strength of each relationship. Do the results support your expectations?
+
+## 4. Compare correlations between 2000 and 2020
+
+Next, examine whether relationships between climate policy and national characteristics differ across the two years. First, we can create a new dataset for the observations in 2000.
+
+```{r}
+data_2000 <- all_vars %>%
+  filter(year == 2000)
+```
+
+**Task 6** _Create a new correlation matrix for 2000 and print it, just as you did for the 2020 data. Then print both matrices so they can be compared side-by-side._
+
+```{r Task6}
+
+```
+
+**Task 7** How did the correlation between climate-policy stringency and electoral democracy change between 2000 and 2020? What about the relationship between policy stringency and CO₂ emissions per capita?
+
+{Your response here}
+
+## 5. Examine changes within countries
+
+Remember that these matrices describe relationships across countries within each year. A change in a correlation across years is not the same as a change experienced by an individual country. To examine changes over time, we can reshape the dataset so that each country's 2000 and 2020 observations appear in the same row.
+
+```{r}
+country_changes <- all_vars %>%
+  select(
+    country_text_id,
+    country_name,
+    year,
+    oecd_climpol_stringent,
+    co2_per_capita,
+    gdp_per_capita,
+    v2x_polyarchy
+  ) %>%
+  pivot_wider(
+    names_from = year,
+    values_from = c(
+      oecd_climpol_stringent,
+      co2_per_capita,
+      gdp_per_capita,
+      v2x_polyarchy
+    ),
+    names_sep = "_"
+  ) 
+```
+
+**Task 8** _Calculate the change in each variable between 2000 and 2020 for every country._
+
+
+```{r Task8}
+
+```
+
+**Task 9** _To assess these changes, create a correlation matrix for these four new variables. This will show *correlation in changes* across countries._
+
+```{r}
+
+```
+
+
+**Task 10** Identify the five countries with the largest increases and the five countries with the largest decreases in climate-policy stringency. Repeat this analysis for CO₂ emissions per capita.
+
+{Your response here}
+
+**Task 11** How does this within-country change analysis differ from correlating climate-policy stringency and emissions across countries in 2020? Why might the two analyses produce different results?
+
+{Your response here}
+
+## Challenge! ## 
+
+Let's map those variables showing change. The code below downloads country boundaries from Natural Earth (https://www.naturalearthdata.com/). Join your final dataset to these boundaries and use `tmap` to create maps of each of the four variables showing change from 2000-2020. What patterns do you see? How does it add to/change your findings from the main part of the lab?
+
+```{r}
+# install.packages("rnaturalearth")
+library(rnaturalearth)
+countries<-ne_download(type="admin_0_countries")
+```
+
+### Final submission stuff
+
+**Disclosure of assistance:** Besides class materials, what other sources of assistance did you use while completing this lab? These can include input from classmates, relevant material identified through web searches (e.g., Stack Overflow), or assistance from ChatGPT or other AI tools. How did these sources support your own learning in completing this lab?
+
+{Response here.}
+
+**Lab reflection:** How do you feel about the work you did on this lab? Was it easy, moderate, or hard? What are the biggest things you learned by completing it?
+
+{Your response here}
