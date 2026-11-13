@@ -156,7 +156,7 @@ data_2020 %>%
 
 **Task 2** _Which variables appear most skewed? Pick one of these and identify some of the countries that are outliers for this variable._
 
-{Your response goes here.}
+v2x_polyarchy (Democracy index) appears very left skewed in the histogram and Q-Q plot. This means that most countries have a higher index, but there are a few that are very low. These are India, Hungary, Indonesia, Poland and Mexico. 
 
 ## 3. Calculate correlations for 2020
 
@@ -166,15 +166,29 @@ Correlation coefficients measure the direction and strength of relationships bet
 
 ```{r Task3}
 
+filter <- data_2020 %>%
+    select(c(
+    oecd_climpol_stringent,
+    co2_per_capita,
+    gdp_per_capita,
+    v2x_polyarchy))
+
+rcorr(as.matrix(filter))
+
 ```
 
 **Task 4** _Create a correlation plot from this matrix using `corrplot` and the parameters of your choosing_
 
 ```{r Task4}
 
+correlation_matrix <- cor(filter)
+corrplot(correlation_matrix,order="hclust", method="ellipse",diag=FALSE)
+
 ```
 
 **Task 5** Based on your correlation matrix and correlation plot, is climate-policy stringency associated with electoral democracy, GDP per capita, or CO₂ emissions per capita? Describe the direction and strength of each relationship. Do the results support your expectations?
+
+Stringency is positively correlated with GDP, CO2 emissions, and democracy. It is moderately correlated (0.48) correlated with GDP. It is slightly correlated (0.16) with CO2 emissions. It is slightly correlated (0.36) with democracy. The strongest correlation with stringency is with GDP, indicating richer countries have stricter policy. The result I think is interesting is the positive correlation with C02; I would expect stricter policy to result in lower emissions. A possible cause of this could be that strict countries are the most developed (like the US) and even though they have a strict policy they still emit a lot. I don't know, though.
 
 ## 4. Compare correlations between 2000 and 2020
 
@@ -188,12 +202,29 @@ data_2000 <- all_vars %>%
 **Task 6** _Create a new correlation matrix for 2000 and print it, just as you did for the 2020 data. Then print both matrices so they can be compared side-by-side._
 
 ```{r Task6}
+filter2000 <- data_2000 %>%
+    select(c(
+    oecd_climpol_stringent,
+    co2_per_capita,
+    gdp_per_capita,
+    v2x_polyarchy))
+
+rcorr(as.matrix(filter2000))
+
+correlation_matrix2000 <- cor(as.matrix(filter2000))
+corrplot(correlation_matrix2000,order="hclust", method="ellipse",diag=FALSE)
+
+correlation_matrix
+correlation_matrix2000 
+
+change = correlation_matrix - correlation_matrix2000
+change
 
 ```
 
 **Task 7** How did the correlation between climate-policy stringency and electoral democracy change between 2000 and 2020? What about the relationship between policy stringency and CO₂ emissions per capita?
 
-{Your response here}
+Both democracy and CO2 emissions decreased in correlation between 2000 and 2020. This is interesting! Stricter countries are slightly less democratic, but have gotten better at decreasing CO2 emissions in line with policy. Good job!  
 
 ## 5. Examine changes within countries
 
@@ -262,4 +293,5 @@ countries<-ne_download(type="admin_0_countries")
 
 **Lab reflection:** How do you feel about the work you did on this lab? Was it easy, moderate, or hard? What are the biggest things you learned by completing it?
 
-{Your response here}
+I learned to scroll up in the console before I ask questions :) 
+I am learning a lot about how to properly assess correlation and interpret it with caution, particularly when the data is not normal. I am enjoying bringing in context and real data to interpret, as it is very interesting as well as applicable. I think that is my biggest statistics hurdle -- coding it and understanding what it is saying are different tasks but these labs are very helpful with that. 
